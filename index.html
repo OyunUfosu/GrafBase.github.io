@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrafikMaster</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-line"></i>GrafikMaster</h1>
+        </header>
+        
+        <div class="data-section card">
+            <h2><i class="fas fa-table"></i> Veri Tablosu</h2>
+            <div class="table-controls">
+                <button id="addColumn" class="btn-primary"><i class="fas fa-plus"></i> Sütun Ekle</button>
+                <button id="addRow" class="btn-primary"><i class="fas fa-plus"></i> Satır Ekle</button>
+                <button id="generateChart" class="btn-success"><i class="fas fa-chart-pie"></i> Grafik Oluştur</button>
+            </div>
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Kategori <button class="btn-icon edit-header"><i class="fas fa-edit"></i></button></th>
+                            <th>Değer 1 <button class="btn-icon edit-header"><i class="fas fa-edit"></i></button> <button class="btn-icon delete-col"><i class="fas fa-times"></i></button></th>
+                            <th>Değer 2 <button class="btn-icon edit-header"><i class="fas fa-edit"></i></button> <button class="btn-icon delete-col"><i class="fas fa-times"></i></button></th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td contenteditable="true">Kategori 1</td>
+                            <td contenteditable="true">100</td>
+                            <td contenteditable="true">45</td>
+                            <td><button class="btn-danger deleteRow"><i class="fas fa-trash"></i> Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td contenteditable="true">Kategori 2</td>
+                            <td contenteditable="true">200</td>
+                            <td contenteditable="true">30</td>
+                            <td><button class="btn-danger deleteRow"><i class="fas fa-trash"></i> Sil</button></td>
+                        </tr>
+                        <tr>
+                            <td contenteditable="true">Kategori 3</td>
+                            <td contenteditable="true">150</td>
+                            <td contenteditable="true">25</td>
+                            <td><button class="btn-danger deleteRow"><i class="fas fa-trash"></i> Sil</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="chart-section card">
+            <h2><i class="fas fa-chart-bar"></i> Grafikler</h2>
+            <div class="chart-types">
+                <button class="chart-btn active" data-type="line"><i class="fas fa-chart-line"></i> Çizgi Grafiği</button>
+                <button class="chart-btn" data-type="bar"><i class="fas fa-chart-bar"></i> Izgara Grafiği</button>
+                <button class="chart-btn" data-type="pie"><i class="fas fa-chart-pie"></i> Pasta Grafiği</button>
+                <button class="chart-btn" data-type="doughnut"><i class="fas fa-chart-doughnut"></i> Gösterge Grafiği</button>
+                <button id="downloadPdf" class="btn-primary"><i class="fas fa-file-pdf"></i> PDF Olarak İndir</button>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+<!-- Bilgi Videosu Açılışta Gösterilecek -->
+<div id="introVideoModal">
+    <div class="video-overlay">
+        <div class="video-container">
+            <button id="closeVideoBtn" aria-label="Kapat">
+                <i class="fas fa-times"></i>
+            </button>
+            <video id="introVideo" controls autoplay>
+                <source src="video.mp4" type="video/mp4">
+                Tarayıcınız video etiketini desteklemiyor.
+            </video>
+        </div>
+    </div>
+</div>
+</body>
+</html>

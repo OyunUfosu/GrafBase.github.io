@@ -8,7 +8,7 @@
 
 ## 🚀 Özellikler
 
-- 📊 **Çeşitli grafik türleri**: Çizgi, ızgara/sütun, pasta ve gösterge (gauge) grafikleri
+- 📊 **Çeşitli grafik türleri**: Çizgi, ızgara/sütun, pasta, gösterge (gauge), mum, nüfus piramiti, radar ve dağılım grafikleri
 - ✍️ **Kolay veri girişi**: Etiketler ve sayısal veriler ile hızlı giriş
 - 🖨️ **PDF dışa aktarma**: Oluşturulan grafikleri tek tıkla PDF olarak indir
 - 💡 **Hafif ve responsive** arayüz: Basit, sezgisel ve kullanıcı dostu

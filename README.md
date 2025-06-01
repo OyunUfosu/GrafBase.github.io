@@ -1,8 +1,8 @@
-# 🎨 GrafikMaster
+# 🎨 GrafBase
 
-**GrafikMaster**, kullanıcıların hızlıca veri girip farklı grafik türleri (çizgi, sütun, pasta, gösterge) oluşturmasını ve bu grafikleri PDF formatında dışa aktarmasını sağlayan web tabanlı bir grafik oluşturma uygulamasıdır.
+**GrafBase**, kullanıcıların hızlıca veri girip farklı grafik türleri (çizgi, sütun, pasta, gösterge, mum, nüfus piramti, radar, dağılım) oluşturmasını ve bu grafikleri PDF formatında dışa aktarmasını sağlayan web tabanlı bir grafik oluşturma uygulamasıdır.
 
-[🔗 Uygulama Web Sitesi](https://oyunufosu.github.io/GrafikMaster.github.io/)
+[🔗 Uygulama Web Sitesi](https://oyunufosu.github.io/GrafBase.github.io/)
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 🛠️ Kullanım
 
-1. Web sitesine git: [GrafikMaster](https://oyunufosu.github.io/GrafikMaster.github.io/)
+1. Web sitesine git: [GrafBaser](https://oyunufosu.github.io/GrafBase.github.io/)
 2. Veri etiketlerini ve sayı değerlerini gir.
 3. Grafik türünü seç (örneğin çizgi, pasta vb.).
 4. "Grafik Oluştur" butonuna bas.

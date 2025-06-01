@@ -263,3 +263,20 @@ th:hover .delete-col {
 #closeVideoBtn:hover {
     color: #e74c3c;
 }
+
+.chart-types {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+/* Scatter plot için ek stiller */
+.fa-dot-circle {
+    margin-right: 5px;
+}
+
+.chart-container canvas {
+    background-color: white;
+}

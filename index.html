@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <!-- Chart.js 3.7.1 (financial ile uyumlu sürüm) -->
-     <!-- Chart.js'den sonra bu eklentiyi ekleyin -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.0/dist/chartjs-chart-financial.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Chart.js ve eklentileri -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.0/dist/chartjs-chart-financial.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
 </head>
 
@@ -27,7 +28,14 @@
             <div class="table-controls">
                 <button id="addColumn" class="btn-primary"><i class="fas fa-plus"></i> Sütun Ekle</button>
                 <button id="addRow" class="btn-primary"><i class="fas fa-plus"></i> Satır Ekle</button>
+                <button id="saveData" class="btn-primary"><i class="fas fa-save"></i> Veri Kaydet</button>
+                <button id="loadData" class="btn-primary"><i class="fas fa-folder-open"></i> Veri Yükle</button>
+                <button id="importData" class="btn-primary"><i class="fas fa-file-import"></i> Veri İçe Aktar</button>
                 <button id="generateChart" class="btn-success"><i class="fas fa-chart-pie"></i> Grafik Oluştur</button>
+
+                <!-- Dosya seçim inputu (gizli) -->
+                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
+    </div>
             </div>
             <div class="table-container">
                 <table id="dataTable">
@@ -69,30 +77,39 @@
                 <button class="chart-btn active" data-type="line"><i class="fas fa-chart-line"></i> Çizgi Grafiği</button>
                 <button class="chart-btn" data-type="bar"><i class="fas fa-chart-bar"></i> Izgara Grafiği</button>
                 <button class="chart-btn" data-type="pie"><i class="fas fa-chart-pie"></i> Pasta Grafiği</button>
-                <button class="chart-btn" data-type="doughnut"><i class="fas fa-chart-doughnut"></i> Gösterge Grafiği</button>
-                <button class="chart-btn" data-type="candlestick"><i class="fas fa-candlestick-chart"></i> Mum Grafiği</button>
+                <button class="chart-btn" data-type="doughnut"><i class="fas fa-chart-pie"></i> Gösterge Grafiği</button>
+                <button class="chart-btn" data-type="candlestick"><i class="fas fa-chart-line"></i> Mum Grafiği</button>
                 <button class="chart-btn" data-type="population"><i class="fas fa-venus-mars"></i> Nüfus Piramidi</button>
                 <button class="chart-btn" data-type="radar"><i class="fas fa-bullseye"></i> Radar Grafiği</button>
                 <button class="chart-btn" data-type="scatter"><i class="fas fa-dot-circle"></i> Dağılım Grafiği</button>
+                <button class="chart-btn" data-type="area"><i class="fas fa-chart-area"></i> Alan Grafiği</button>
+                <button class="chart-btn" data-type="bubble"><i class="fas fa-circle"></i> Bubble Grafiği</button>
+                <button class="chart-btn" data-type="stackedBar"><i class="fas fa-chart-bar"></i> Stacked Bar Grafiği</button>
+                <button class="chart-btn" data-type="timeseries"><i class="fas fa-clock"></i> Zaman Serisi</button>
+                <button class="chart-btn" data-type="polarArea"><i class="fas fa-chart-pie"></i> Polar Area Grafiği</button>
                 <button id="downloadPdf" class="btn-primary"><i class="fas fa-file-pdf"></i> PDF Olarak İndir</button>
             </div>
-            
+            <!-- Mevcut kodlara ekle -->
             <div class="chart-container">
                 <canvas id="chartCanvas"></canvas>
             </div>
         </div>
     </div>
 
+    <!-- Gizli dosya inputu -->
+    <input type="file" id="loadDataInput" accept=".json" style="display: none;">
+</div>
+
     <script src="script.js"></script>
 </body>
 <!-- Bilgi Videosu Açılışta Gösterilecek -->
-<div id="introVideoModal">
+<div id="introVideoModal" style="display: none;">
     <div class="video-overlay">
         <div class="video-container">
             <button id="closeVideoBtn" aria-label="Kapat">
                 <i class="fas fa-times"></i>
             </button>
-            <video id="introVideo" controls autoplay>
+            <video id="introVideo" controls>
                 <source src="video.mp4" type="video/mp4">
                 Tarayıcınız video etiketini desteklemiyor.
             </video>

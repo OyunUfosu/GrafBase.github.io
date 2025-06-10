@@ -6,7 +6,7 @@
 
 ## 🔗 Uygulama Web Sitesi
 
-> [GrafBase Uygulamasını Aç](#) *(Bağlantıyı buraya ekleyin)*
+> [GrafBase Uygulamasını Aç]([#](https://oyunufosu.github.io/GrafBase.github.io/))
 
 ---
 

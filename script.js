@@ -16,6 +16,7 @@ if (
         window.Title,
         window.Tooltip,
         window.Legend,
+        window.ChartAnnotation,
         ChartDataLabels
     );
 }
@@ -900,105 +901,105 @@ if (currentChartType === 'bubble') {
 
         // Scatter grafik
         if (currentChartType === 'scatter') {
-            const points = [];
-            const xValues = [];
-            const yValues = [];
+    const points = [];
+    const xValues = [];
+    const yValues = [];
 
-            dataTable.querySelectorAll('tbody tr').forEach(row => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length >= 3) {
-                    const x = parseFloat(cells[1].textContent) || 0;
-                    const y = parseFloat(cells[2].textContent) || 0;
-                    xValues.push(x);
-                    yValues.push(y);
-                    points.push({ x, y });
-                }
-            });
+    dataTable.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+            const x = parseFloat(cells[1].textContent) || 0;
+            const y = parseFloat(cells[2].textContent) || 0;
+            xValues.push(x);
+            yValues.push(y);
+            points.push({ x, y });
+        }
+    });
 
-            const regression = linearRegression(points);
-            const regressionLine = xValues.map(x => regression.slope * x + regression.intercept);
+    const regression = linearRegression(points);
+    const regressionLine = xValues.map(x => regression.slope * x + regression.intercept);
 
-            chartInstance = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [
-                        {
-                            label: 'Veri Noktaları',
-                            data: points,
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1,
-                            pointRadius: 6
-                        },
-                        {
-                            label: 'Regresyon Çizgisi',
-                            data: xValues.map((x, i) => ({ x, y: regressionLine[i] })),
-                            type: 'line',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
+    chartInstance = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Veri Noktaları',
+                    data: points,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    pointRadius: 6
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'X Değerleri'
-                            }
+                {
+                    label: 'Regresyon Çizgisi',
+                    data: xValues.map((x, i) => ({ x, y: regressionLine[i] })),
+                    type: 'line',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'X Değerleri'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Y Değerleri'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                annotation: {
+                    annotations: {
+                        line1: {
+                            type: 'line',
+                            yMin: 0,
+                            yMax: 0,
+                            borderColor: 'rgb(0, 0, 0)',
+                            borderWidth: 1
                         },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Y Değerleri'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
+                        line2: {
+                            type: 'line',
+                            xMin: 0,
+                            xMax: 0,
+                            borderColor: 'rgb(0, 0, 0)',
+                            borderWidth: 1
                         },
-                        annotation: {
-                            annotations: {
-                                line1: {
-                                    type: 'line',
-                                    yMin: 0,
-                                    yMax: 0,
-                                    borderColor: 'rgb(0, 0, 0)',
-                                    borderWidth: 1
-                                },
-                                line2: {
-                                    type: 'line',
-                                    xMin: 0,
-                                    xMax: 0,
-                                    borderColor: 'rgb(0, 0, 0)',
-                                    borderWidth: 1
-                                },
-                                label1: {
-                                    type: 'label',
-                                    xValue: Math.min(...xValues),
-                                    yValue: Math.max(...yValues),
-                                    content: [
-                                        `R² = ${regression.rSquared.toFixed(2)}`,
-                                        `RMSE = ${regression.rmse.toFixed(2)}`
-                                    ],
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                }
+                        label1: {
+                            type: 'label',
+                            xValue: Math.min(...xValues),
+                            yValue: Math.max(...yValues),
+                            content: [
+                                `R² = ${regression.rSquared.toFixed(2)}`,
+                                `RMSE = ${regression.rmse.toFixed(2)}`
+                            ],
+                            font: {
+                                size: 12,
+                                weight: 'bold'
                             }
                         }
                     }
                 }
-            });
-            setupChartClickHandler();
-            return;
+            }
         }
+    });
+    setupChartClickHandler();
+    return;
+}
 
         // Radar grafik
         if (currentChartType === 'radar') {
@@ -1539,21 +1540,28 @@ function loadHtml2CanvasLibrary() {
 
     // Veri kaydetme butonu
     saveDataBtn.addEventListener('click', function() {
-        try {
-            const tableData = getTableData();
-            const chartConfig = chartInstance ? {
-                type: chartInstance.config.type,
-                data: chartInstance.data,
-                options: chartInstance.options
-            } : null;
-            
-            const dataToSave = {
-                version: "1.0",
-                tableData: tableData,
-                chartConfig: chartConfig,
-                colorPalette: colorPalette,
-                timestamp: new Date().toISOString()
-            };
+    try {
+        const tableData = getTableData();
+        const chartConfig = chartInstance ? {
+            type: chartInstance.config.type,
+            data: chartInstance.data,
+            options: chartInstance.options
+        } : null;
+        
+        const dataToSave = {
+            version: "1.0",
+            tableData: tableData,
+            chartConfig: chartConfig,
+            colorPalette: colorPalette,
+            timestamp: new Date().toISOString()
+        };
+
+        // Datalabels plugin'i kaldır (JSON.stringify sorun çıkarıyor)
+        if (dataToSave.chartConfig && dataToSave.chartConfig.options && 
+            dataToSave.chartConfig.options.plugins && 
+            dataToSave.chartConfig.options.plugins.datalabels) {
+            delete dataToSave.chartConfig.options.plugins.datalabels;
+        }
             
             const dataStr = JSON.stringify(dataToSave, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });

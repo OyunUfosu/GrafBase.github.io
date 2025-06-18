@@ -14,15 +14,19 @@
 
 ### 📊 Zengin Grafik Türleri
 
-* Çizgi (Line)
-* Sütun (Bar)
-* Pasta (Pie)
-* Gösterge (Gauge)
+* Çizgi (Line) Grafiği
+* Izgara (Bar) Grafiği
+* Pasta (Pie) Grafiği
+* Gösterge (Gauge) Grafiği
+* 📌 **Yeni:** Mum (Candlestick) Grafiği
+* 📌 **Yeni:** Nüfus (Population) Grafiği
+* 📌 **Yeni:** Radar (Radar) Grafiği
+* 📌 **Yeni:** Dağılım (Scatter) Grafiği
+* 📌 **Yeni:** Alan (area) Grafiği
 * 📌 **Yeni:** Baloncuk (Bubble) Grafiği
 * 📌 **Yeni:** Yığılmış Çubuk (Stacked Bar) Grafiği
 * 📌 **Yeni:** Zaman Serisi (Time Series) Grafiği
 * 📌 **Yeni:** Polar Alan (Polar Area) Grafiği
-* Finansal grafik desteği (Candlestick)
 
 ### ✍️ Kolay ve Esnek Veri Girişi
 

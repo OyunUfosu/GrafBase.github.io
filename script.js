@@ -1,3 +1,10 @@
+// Gauge grafiği için renk belirleme fonksiyonu
+function getGaugeColor(value) {
+    if (value < 30) return '#ff6384'; // Kırmızı
+    if (value < 70) return '#ffce56'; // Sarı
+    return '#2ecc71'; // Yeşil
+}
+
 // Chart.js kayıt işlemleri
 if (
     typeof Chart !== 'undefined' &&
@@ -533,6 +540,361 @@ document.addEventListener('DOMContentLoaded', async function () {
     function updateChart() {
         if (chartInstance) chartInstance.destroy();
         const ctx = document.getElementById('chartCanvas').getContext('2d');
+
+        // Progress Donut grafiği
+if (currentChartType === 'progressDonut') {
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    
+
+    // Örnek veri (tablodan veri alabilirsiniz)
+    const progressValue = 75; // %75 ilerleme (tablodan dinamik olarak alınabilir)
+    const remainingValue = 100 - progressValue;
+
+    chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [progressValue, remainingValue],
+                backgroundColor: [
+                    '#2ecc71', // İlerleme rengi (yeşil)
+                    '#f0f0f0'  // Kalan rengi (açık gri)
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            circumference: 270, // 270 derece (3/4 daire)
+            rotation: -135,    // Başlangıç açısı
+            cutout: '80%',     // İç boşluk
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                },
+                datalabels: {
+                    display: false
+                }
+            }
+        },
+        plugins: [{
+            id: 'progress-text',
+            afterDraw: (chart) => {
+                const { ctx, chartArea: { width, height } } = chart;
+                
+                // Ortadaki değeri yazdır
+                ctx.save();
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#333';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${progressValue}%`, width / 2, height / 2 + 10);
+                
+                // Etiket
+                ctx.font = '14px Arial';
+                ctx.fillText('İlerleme', width / 2, height / 2 + 40);
+                ctx.restore();
+            }
+        }]
+    });
+    return;
+}
+
+// Tablodan ilerleme değerini al
+let progressValue = 0;
+const rows = dataTable.querySelectorAll('tbody tr');
+if (rows.length > 0 && rows[0].querySelectorAll('td').length > 1) {
+    progressValue = parseFloat(rows[0].querySelectorAll('td')[1].textContent) || 0;
+}
+
+        // Gauge grafiği
+if (currentChartType === 'gauge') {
+    // Önceki grafiği temizle
+    if (chartInstance) chartInstance.destroy();
+    
+    // Canvas ve container'ı al
+    const canvas = document.getElementById('chartCanvas');
+    const container = canvas.parentNode;
+    container.classList.add('gauge-chart');
+    
+    // Gauge için verileri topla
+    let total = 0;
+    let count = 0;
+    let maxValue = 0;
+    
+    dataTable.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        for (let i = 1; i < cells.length - 1; i++) {
+            const value = parseFloat(cells[i].textContent) || 0;
+            total += value;
+            count++;
+            if (value > maxValue) maxValue = value;
+        }
+    });
+    
+    const average = count > 0 ? total / count : 0;
+    const percentage = maxValue > 0 ? (average / maxValue) * 100 : 0;
+    
+    // Gauge grafiği oluştur
+    chartInstance = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [percentage, 100 - percentage],
+                backgroundColor: [
+                    getGaugeColor(percentage),
+                    '#f0f0f0'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            circumference: 180,
+            rotation: -90,
+            cutout: '80%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                },
+                datalabels: {
+                    display: false
+                }
+            }
+        },
+        plugins: [{
+            id: 'gauge-text',
+            afterDraw: (chart) => {
+                const { ctx, chartArea: { width, height } } = chart;
+                
+                // Ortadaki değeri yazdır
+                ctx.save();
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#333';
+                ctx.textAlign = 'center';
+                ctx.fillText(average.toFixed(2), width / 2, height / 2 + 10);
+                
+                // Eğer varsa etiket
+                if (dataTable.querySelector('thead th:first-child')) {
+                    const label = dataTable.querySelector('thead th:first-child').textContent.trim();
+                    ctx.font = '14px Arial';
+                    ctx.fillText(label, width / 2, height / 2 + 40);
+                }
+                ctx.restore();
+            }
+        }]
+    });
+    
+    return;
+}
+
+// Gauge rengini belirleme fonksiyonu
+function getGaugeColor(value) {
+    if (value < 30) return '#ff6384'; // Kırmızı
+    if (value < 70) return '#ffce56'; // Sarı
+    return '#2ecc71'; // Yeşil
+}
+
+        // Histogram grafiği
+if (currentChartType === 'histogram') {
+    const values = [];
+    
+    // Tüm sayısal değerleri topla
+    dataTable.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        for (let i = 1; i < cells.length - 1; i++) {
+            const value = parseFloat(cells[i].textContent);
+            if (!isNaN(value)) {
+                values.push(value);
+            }
+        }
+    });
+
+    if (values.length === 0) {
+        showToast('Histogram oluşturmak için sayısal veri bulunamadı!', 'error');
+        return;
+    }
+
+    // Bin sayısını belirle (Sturges formülü)
+    const binCount = Math.ceil(Math.log2(values.length) + 1) || 5;
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const range = maxValue - minValue;
+    const binSize = range / binCount;
+
+    // Bin aralıklarını ve frekansları hesapla
+    const bins = Array(binCount).fill(0).map((_, i) => {
+        const binStart = minValue + (i * binSize);
+        const binEnd = binStart + binSize;
+        return {
+            x: binStart,
+            xEnd: binEnd,
+            y: 0,
+            label: `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`
+        };
+    });
+
+    // Değerleri bölmelere dağıt
+    values.forEach(value => {
+        let binIndex = Math.floor((value - minValue) / binSize);
+        // Son değer en son bölmeye gitmeli
+        if (binIndex >= binCount) binIndex = binCount - 1;
+        bins[binIndex].y++;
+    });
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: bins.map(bin => bin.label),
+            datasets: [{
+                label: 'Frekans',
+                data: bins.map(bin => bin.y),
+                backgroundColor: colorPalette[0],
+                borderColor: '#fff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Değer Aralıkları'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Frekans'
+                    },
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Frekans: ${context.raw}`;
+                        },
+                        afterLabel: function(context) {
+                            const bin = bins[context.dataIndex];
+                            return `Aralık: ${bin.x.toFixed(2)} - ${bin.xEnd.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Histogram stilini uygula
+    ctx.canvas.parentNode.classList.add('histogram-chart');
+    setupChartClickHandler();
+    return;
+}
+
+        // Heatmap grafiği
+if (currentChartType === 'heatmap') {
+    const labels = [];
+    const datasets = [];
+    const headerRow = dataTable.querySelector('thead tr');
+    const headers = [];
+    
+    // Başlıkları al (sütun isimleri)
+    headerRow.querySelectorAll('th').forEach((th, index) => {
+        if (index !== 0 && index !== headerRow.children.length - 1) {
+            headers.push(th.childNodes[0].textContent.trim());
+        }
+    });
+
+    // Satır etiketlerini ve verilerini al
+    dataTable.querySelectorAll('tbody tr').forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        const rowLabel = cells[0].textContent.trim();
+        labels.push(rowLabel);
+        
+        const rowData = [];
+        for (let i = 1; i < cells.length - 1; i++) {
+            const value = parseFloat(cells[i].textContent) || 0;
+            rowData.push(value);
+        }
+        
+        datasets.push(rowData);
+    });
+
+    // Renk skalası için fonksiyon
+    function getColor(value, maxValue) {
+        const ratio = value / maxValue;
+        const hue = (1 - ratio) * 120; // 120 yeşil, 0 kırmızı
+        return `hsl(${hue}, 100%, 50%)`;
+    }
+
+    // Maksimum değeri bul
+    let maxValue = 0;
+    datasets.forEach(row => {
+        row.forEach(value => {
+            if (value > maxValue) maxValue = value;
+        });
+    });
+
+    // Heatmap veri setini oluştur
+    const heatmapData = {
+        labels: headers,
+        datasets: labels.map((label, i) => ({
+            label: label,
+            data: datasets[i],
+            backgroundColor: datasets[i].map(value => getColor(value, maxValue))
+        }))
+    };
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: heatmapData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    stacked: true,
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+    
+    // Özel heatmap stilini uygula
+    ctx.canvas.parentNode.classList.add('heatmap-chart');
+    setupChartClickHandler();
+    return;
+}
 
 // Polar Area grafiği
 if (currentChartType === 'polarArea') {

@@ -27,6 +27,10 @@
 * 📌 **Yeni:** Yığılmış Çubuk (Stacked Bar) Grafiği
 * 📌 **Yeni:** Zaman Serisi (Time Series) Grafiği
 * 📌 **Yeni:** Polar Alan (Polar Area) Grafiği
+* 📌 **Yeni:** Isı Haritası (Heatmap) Grafiği
+* 📌 **Yeni:** Histogram Grafiği
+* 📌 **Yeni:** İbreli (Gauge) Grafiği
+* 📌 **Yeni:** İlerleme Halka (Progress Donut) Grafiği
 
 ### ✍️ Kolay ve Esnek Veri Girişi
 

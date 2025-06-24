@@ -18,19 +18,19 @@
 * Izgara (Bar) Grafiği
 * Pasta (Pie) Grafiği
 * Gösterge (Gauge) Grafiği
-* 📌 **Yeni:** Mum (Candlestick) Grafiği
-* 📌 **Yeni:** Nüfus (Population) Grafiği
-* 📌 **Yeni:** Radar (Radar) Grafiği
-* 📌 **Yeni:** Dağılım (Scatter) Grafiği
-* 📌 **Yeni:** Alan (area) Grafiği
-* 📌 **Yeni:** Baloncuk (Bubble) Grafiği
-* 📌 **Yeni:** Yığılmış Çubuk (Stacked Bar) Grafiği
-* 📌 **Yeni:** Zaman Serisi (Time Series) Grafiği
-* 📌 **Yeni:** Polar Alan (Polar Area) Grafiği
-* 📌 **Yeni:** Isı Haritası (Heatmap) Grafiği
-* 📌 **Yeni:** Histogram Grafiği
-* 📌 **Yeni:** İbreli (Gauge) Grafiği
-* 📌 **Yeni:** İlerleme Halka (Progress Donut) Grafiği
+* Mum (Candlestick) Grafiği
+* Nüfus (Population) Grafiği
+* Radar (Radar) Grafiği
+* Dağılım (Scatter) Grafiği
+* Alan (area) Grafiği
+* Baloncuk (Bubble) Grafiği
+* Yığılmış Çubuk (Stacked Bar) Grafiği
+* Zaman Serisi (Time Series) Grafiği
+* Polar Alan (Polar Area) Grafiği
+* Isı Haritası (Heatmap) Grafiği
+* Histogram Grafiği
+* İbreli (Gauge) Grafiği
+* İlerleme Halka (Progress Donut) Grafiği
 
 ### ✍️ Kolay ve Esnek Veri Girişi
 

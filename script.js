@@ -44,6 +44,282 @@ function loadChartDataLabels() {
 document.addEventListener('DOMContentLoaded', async function () {
     // ChartDataLabels eklentisini yükle
     await loadChartDataLabels();
+
+    document.getElementById('recommendChart').addEventListener('click', analyzeDataForRecommendation);
+    // Grafik önerisi modalını oluştur
+function createRecommendationModal() {
+    const modal = document.createElement('div');
+    modal.id = 'recommendationModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-recommendation">&times;</span>
+            <h3>Grafik Önerileri</h3>
+            <div id="recommendationResults"></div>
+            <button id="applyRecommendation" class="btn-primary">Öneriyi Uygula</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Modal kapatma işlevi
+    document.querySelector('.close-recommendation').onclick = function() {
+        modal.style.display = 'none';
+    };
+    
+    // Dışarı tıklayarak kapatma
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
+    
+    // Öneriyi uygula butonu
+    document.getElementById('applyRecommendation').addEventListener('click', function() {
+        const selectedRecommendation = document.querySelector('.recommendation-item.selected');
+        if (selectedRecommendation) {
+            const chartType = selectedRecommendation.dataset.type;
+            currentChartType = chartType;
+            
+            // Aktif butonu güncelle
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === chartType) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            updateChart();
+            modal.style.display = 'none';
+            showToast('Önerilen grafik uygulandı!', 'success');
+        }
+    });
+    
+    return modal;
+}
+
+// Veriyi analiz ederek grafik önerileri oluştur
+function analyzeDataForRecommendation() {
+    const { headers, rows } = getTableData();
+    if (rows.length === 0 || headers.length === 0) {
+        showToast('Öneri için yeterli veri bulunamadı!', 'error');
+        return;
+    }
+
+    // Veri özelliklerini analiz et
+    const analysis = {
+        rowCount: rows.length,
+        columnCount: headers.length,
+        numericColumns: 0,
+        timeBased: false,
+        hasNegativeValues: false,
+        hasZeroValues: false,
+        valueRange: { min: Infinity, max: -Infinity },
+        uniqueCategories: new Set(),
+        valueDistribution: {},
+        columnTypes: []
+    };
+
+    // Sütun tiplerini belirle
+    headers.forEach((header, colIndex) => {
+        let isNumeric = true;
+        let isDate = false;
+        const values = [];
+        
+        rows.forEach(row => {
+            const value = row[colIndex];
+            values.push(value);
+            
+            // Kategorik veri kontrolü
+            if (typeof value === 'string' && isNaN(parseFloat(value))) {
+                isNumeric = false;
+                analysis.uniqueCategories.add(value);
+            }
+            
+            // Tarih kontrolü
+            if (typeof value === 'string') {
+                const date = luxon.DateTime.fromISO(value);
+                if (date.isValid) {
+                    isDate = true;
+                    isNumeric = false;
+                }
+            }
+            
+            // Sayısal değer analizi
+            if (typeof value === 'number') {
+                analysis.valueRange.min = Math.min(analysis.valueRange.min, value);
+                analysis.valueRange.max = Math.max(analysis.valueRange.max, value);
+                
+                if (value < 0) analysis.hasNegativeValues = true;
+                if (value === 0) analysis.hasZeroValues = true;
+            }
+        });
+        
+        // Sütun tipini kaydet
+        analysis.columnTypes.push({
+            name: header,
+            isNumeric,
+            isDate,
+            uniqueValues: new Set(values).size
+        });
+        
+        if (isNumeric) analysis.numericColumns++;
+    });
+
+    // Zaman serisi kontrolü
+    analysis.timeBased = analysis.columnTypes[0]?.isDate || false;
+
+    // Öneri puanlarını hesapla
+    const recommendations = [
+        { type: 'line', score: 0, description: 'Zaman içindeki değişimleri göstermek için uygun' },
+        { type: 'bar', score: 0, description: 'Kategorik verileri karşılaştırmak için uygun' },
+        { type: 'pie', score: 0, description: 'Parçaların bütün içindeki oranını göstermek için uygun' },
+        { type: 'doughnut', score: 0, description: 'Pasta grafiğine benzer, daha modern bir alternatif' },
+        { type: 'radar', score: 0, description: 'Çoklu değişkenleri karşılaştırmak için uygun' },
+        { type: 'scatter', score: 0, description: 'İki değişken arasındaki ilişkiyi göstermek için uygun' },
+        { type: 'bubble', score: 0, description: 'Üç boyutlu verileri göstermek için uygun' },
+        { type: 'area', score: 0, description: 'Zaman içindeki değişimleri vurgulamak için uygun' },
+        { type: 'stackedBar', score: 0, description: 'Kategorilerin bileşenlerini göstermek için uygun' },
+        { type: 'timeseries', score: 0, description: 'Zaman serisi verileri için optimize edilmiş' },
+        { type: 'polarArea', score: 0, description: 'Radar grafiğine benzer, daha vurgulu bir alternatif' },
+        { type: 'heatmap', score: 0, description: 'Yoğunlukları ve korelasyonları göstermek için uygun' },
+        { type: 'histogram', score: 0, description: 'Veri dağılımını göstermek için uygun' },
+        { type: 'violin', score: 0, description: 'Dağılımın yoğunluğunu ve aralığını gösterir' },
+        { type: 'boxplot', score: 0, description: 'Verilerin istatistiksel özelliklerini gösterir' },
+        { type: 'stream', score: 0, description: 'Zaman içindeki bileşen değişimlerini gösterir' },
+        { type: 'treemap', score: 0, description: 'Hiyerarşik verileri göstermek için uygun' },
+        { type: 'population', score: 0, description: 'Yaş dağılımı gibi veriler için uygun' }
+    ];
+
+    // Puanlama kuralları
+    recommendations.forEach(rec => {
+        switch(rec.type) {
+            case 'line':
+            case 'area':
+            case 'timeseries':
+                if (analysis.timeBased) rec.score += 30;
+                if (analysis.numericColumns >= 2) rec.score += 20;
+                if (analysis.rowCount > 5) rec.score += 10;
+                break;
+                
+            case 'bar':
+            case 'stackedBar':
+                if (analysis.columnCount >= 2) rec.score += 20;
+                if (analysis.rowCount <= 10) rec.score += 15;
+                if (analysis.numericColumns >= 1) rec.score += 10;
+                break;
+                
+            case 'pie':
+            case 'doughnut':
+            case 'polarArea':
+                if (analysis.rowCount <= 7) rec.score += 30;
+                if (analysis.columnCount === 2) rec.score += 20;
+                if (!analysis.hasNegativeValues) rec.score += 10;
+                break;
+                
+            case 'radar':
+                if (analysis.columnCount >= 3) rec.score += 20;
+                if (analysis.rowCount <= 10) rec.score += 15;
+                if (!analysis.hasNegativeValues) rec.score += 5;
+                break;
+                
+            case 'scatter':
+            case 'bubble':
+                if (analysis.numericColumns >= 2) rec.score += 30;
+                if (analysis.rowCount >= 10) rec.score += 20;
+                break;
+                
+            case 'heatmap':
+                if (analysis.columnCount >= 3 && analysis.rowCount >= 3) rec.score += 30;
+                if (analysis.numericColumns >= 2) rec.score += 20;
+                break;
+                
+            case 'histogram':
+            case 'violin':
+            case 'boxplot':
+                if (analysis.numericColumns >= 1) rec.score += 30;
+                if (analysis.rowCount >= 15) rec.score += 20;
+                break;
+                
+            case 'stream':
+                if (analysis.columnCount >= 3 && analysis.rowCount >= 5) rec.score += 30;
+                if (analysis.timeBased) rec.score += 20;
+                break;
+                
+            case 'treemap':
+                if (analysis.columnCount === 2) rec.score += 30;
+                if (analysis.rowCount >= 5) rec.score += 15;
+                break;
+                
+            case 'population':
+                if (analysis.columnCount === 3) rec.score += 30;
+                if (analysis.hasNegativeValues) rec.score += 20;
+                break;
+        }
+    });
+
+    // Puanlara göre sırala
+    recommendations.sort((a, b) => b.score - a.score);
+    
+    // En iyi 5 öneriyi al
+    const topRecommendations = recommendations.slice(0, 5);
+    
+    // Öneri modalını göster
+    const modal = document.getElementById('recommendationModal') || createRecommendationModal();
+    const resultsContainer = document.getElementById('recommendationResults');
+    resultsContainer.innerHTML = '';
+    
+    topRecommendations.forEach((rec, index) => {
+        const recItem = document.createElement('div');
+        recItem.className = 'recommendation-item';
+        recItem.dataset.type = rec.type;
+        recItem.innerHTML = `
+            <h4>${index + 1}. ${getChartTypeName(rec.type)} <span class="score">${rec.score}p</span></h4>
+            <p>${rec.description}</p>
+        `;
+        
+        // İlk öğeyi seçili yap
+        if (index === 0) recItem.classList.add('selected');
+        
+        recItem.addEventListener('click', function() {
+            document.querySelectorAll('.recommendation-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            this.classList.add('selected');
+        });
+        
+        resultsContainer.appendChild(recItem);
+    });
+    
+    modal.style.display = 'block';
+}
+
+// Grafik tipi adlarını döndür
+function getChartTypeName(type) {
+    const names = {
+        'line': 'Çizgi Grafiği',
+        'bar': 'Izgara Grafiği',
+        'pie': 'Pasta Grafiği',
+        'doughnut': 'Gösterge Grafiği',
+        'radar': 'Radar Grafiği',
+        'scatter': 'Dağılım Grafiği',
+        'area': 'Alan Grafiği',
+        'bubble': 'Bubble Grafiği',
+        'stackedBar': 'Stacked Bar Grafiği',
+        'timeseries': 'Zaman Serisi',
+        'polarArea': 'Polar Area Grafiği',
+        'heatmap': 'Heatmap Grafiği',
+        'histogram': 'Histogram Grafiği',
+        'violin': 'Violin Plot',
+        'boxplot': 'Boxplot Grafiği',
+        'stream': 'Stream Graph',
+        'treemap': 'Treemap Grafiği',
+        'population': 'Nüfus Piramidi',
+        'candlestick': 'Mum Grafiği',
+        'gauge': 'Gösterge Grafiği',
+        'progressDonut': 'Progress Donut'
+    };
+    return names[type] || type;
+}
     
     // Renk seçici modal elementi
     const colorPickerModal = document.createElement('div');
@@ -540,6 +816,635 @@ document.addEventListener('DOMContentLoaded', async function () {
     function updateChart() {
         if (chartInstance) chartInstance.destroy();
         const ctx = document.getElementById('chartCanvas').getContext('2d');
+
+        // Stream Graph
+if (currentChartType === 'stream') {
+    const categories = [];
+    const headers = [];
+    const headerRow = dataTable.querySelector('thead tr');
+    
+    // Başlıkları al
+    headerRow.querySelectorAll('th').forEach((th, index) => {
+        if (index !== 0 && index !== headerRow.children.length - 1) {
+            headers.push(th.childNodes[0].textContent.trim());
+        }
+    });
+
+    // Kategorileri al
+    dataTable.querySelectorAll('tbody tr').forEach(row => {
+        const firstCell = row.querySelector('td');
+        if (firstCell) categories.push(firstCell.textContent.trim());
+    });
+
+    // Veri setlerini oluştur
+    const chartDatasets = headers.map((header, headerIndex) => {
+        const data = [];
+        dataTable.querySelectorAll('tbody tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells[headerIndex + 1]) {
+                data.push(parseFloat(cells[headerIndex + 1].textContent) || 0);
+            }
+        });
+        
+        return {
+            label: header,
+            data: data,
+            backgroundColor: hexToRgba(colorPalette[headerIndex % colorPalette.length], 0.7),
+            borderColor: colorPalette[headerIndex % colorPalette.length],
+            borderWidth: 0,
+            fill: true,
+            tension: 0.4
+        };
+    });
+
+    // Stream Graph için verileri normalize et (merkez çizgisi etrafında)
+    const normalizedData = [];
+    const timePoints = headers.length;
+    
+    for (let i = 0; i < timePoints; i++) {
+        let sum = 0;
+        for (let j = 0; j < chartDatasets.length; j++) {
+            sum += chartDatasets[j].data[i] || 0;
+        }
+        
+        let cumulative = 0;
+        for (let j = 0; j < chartDatasets.length; j++) {
+            const value = chartDatasets[j].data[i] || 0;
+            const normalizedValue = (value / sum) * 100;
+            cumulative += normalizedValue;
+            
+            if (!normalizedData[j]) {
+                normalizedData[j] = {
+                    label: chartDatasets[j].label,
+                    data: [],
+                    backgroundColor: chartDatasets[j].backgroundColor,
+                    borderColor: chartDatasets[j].borderColor,
+                    borderWidth: 0,
+                    fill: true
+                };
+            }
+            
+            normalizedData[j].data.push(cumulative - normalizedValue / 2);
+        }
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: categories,
+            datasets: normalizedData
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const originalData = chartDatasets[context.datasetIndex].data[context.dataIndex];
+                            return `${context.dataset.label}: ${originalData}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    display: true
+                },
+                y: {
+                    stacked: true,
+                    display: false // Y eksenini gizle
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.4 // Daha yumuşak eğriler
+                }
+            }
+        }
+    });
+    
+    // Stream Graph stilini uygula
+    ctx.canvas.parentNode.classList.add('stream-chart');
+    setupChartClickHandler();
+    return;
+}
+
+        // Boxplot grafiği
+if (currentChartType === 'boxplot') {
+    const datasets = [];
+    const labels = [];
+    const headerRow = dataTable.querySelector('thead tr');
+    const headers = [];
+    
+    // Başlıkları al
+    headerRow.querySelectorAll('th').forEach((th, index) => {
+        if (index !== 0 && index !== headerRow.children.length - 1) {
+            headers.push(th.childNodes[0].textContent.trim());
+        }
+    });
+
+    // Verileri topla
+    headers.forEach((header, headerIndex) => {
+        const values = [];
+        dataTable.querySelectorAll('tbody tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells[headerIndex + 1]) {
+                const value = parseFloat(cells[headerIndex + 1].textContent);
+                if (!isNaN(value)) {
+                    values.push(value);
+                }
+            }
+        });
+
+        if (values.length > 0) {
+            // Boxplot hesaplamaları
+            values.sort((a, b) => a - b);
+            const q1 = quantile(values, 0.25);
+            const median = quantile(values, 0.5);
+            const q3 = quantile(values, 0.75);
+            const iqr = q3 - q1;
+            const min = Math.max(values[0], q1 - 1.5 * iqr);
+            const max = Math.min(values[values.length - 1], q3 + 1.5 * iqr);
+            const outliers = values.filter(v => v < min || v > max);
+
+            datasets.push({
+                label: header,
+                data: {
+                    min: min,
+                    q1: q1,
+                    median: median,
+                    q3: q3,
+                    max: max,
+                    outliers: outliers
+                },
+                backgroundColor: hexToRgba(colorPalette[headerIndex % colorPalette.length], 0.5),
+                borderColor: colorPalette[headerIndex % colorPalette.length],
+                borderWidth: 1
+            });
+        }
+    });
+
+    if (datasets.length === 0) {
+        showToast('Boxplot oluşturmak için sayısal veri bulunamadı!', 'error');
+        return;
+    }
+
+    // Canvas'ı temizle
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Boxplot çizme fonksiyonu
+    function drawBoxplot() {
+        const container = canvas.parentNode;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        const padding = 40;
+        const boxWidth = 30;
+        const availableHeight = height - 2 * padding;
+        const availableWidth = width - 2 * padding;
+        const xStep = availableWidth / (datasets.length + 1);
+
+        // Y ekseni ölçeklendirme
+        const allValues = datasets.flatMap(d => [
+            d.data.min, d.data.q1, d.data.median, d.data.q3, d.data.max, ...d.data.outliers
+        ]);
+        const minValue = Math.min(...allValues);
+        const maxValue = Math.max(...allValues);
+        const valueRange = maxValue - minValue;
+
+        // Eksenleri çiz
+        ctx.beginPath();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        
+        // Y ekseni
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        
+        // X ekseni
+        ctx.moveTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+
+        // Y ekseni etiketleri
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.font = '10px Arial';
+        for (let i = 0; i <= 10; i++) {
+            const value = minValue + (i / 10) * valueRange;
+            const y = height - padding - (i / 10) * availableHeight;
+            ctx.fillText(value.toFixed(2), padding - 5, y);
+            ctx.beginPath();
+            ctx.moveTo(padding - 3, y);
+            ctx.lineTo(padding, y);
+            ctx.stroke();
+        }
+
+        // Boxplot'ları çiz
+        datasets.forEach((dataset, i) => {
+            const x = padding + (i + 1) * xStep;
+            const color = colorPalette[i % colorPalette.length];
+
+            // Min-Max çizgisi
+            const minY = height - padding - ((dataset.data.min - minValue) / valueRange) * availableHeight;
+            const maxY = height - padding - ((dataset.data.max - minValue) / valueRange) * availableHeight;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.moveTo(x, minY);
+            ctx.lineTo(x, maxY);
+            ctx.stroke();
+
+            // Kutu
+            const q1Y = height - padding - ((dataset.data.q1 - minValue) / valueRange) * availableHeight;
+            const q3Y = height - padding - ((dataset.data.q3 - minValue) / valueRange) * availableHeight;
+            const medianY = height - padding - ((dataset.data.median - minValue) / valueRange) * availableHeight;
+            
+            ctx.fillStyle = hexToRgba(color, 0.3);
+            ctx.fillRect(x - boxWidth/2, q3Y, boxWidth, q1Y - q3Y);
+            ctx.strokeRect(x - boxWidth/2, q3Y, boxWidth, q1Y - q3Y);
+            
+            // Medyan çizgisi
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.moveTo(x - boxWidth/2, medianY);
+            ctx.lineTo(x + boxWidth/2, medianY);
+            ctx.stroke();
+
+            // Outlier'lar
+            dataset.data.outliers.forEach(outlier => {
+                const outlierY = height - padding - ((outlier - minValue) / valueRange) * availableHeight;
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(x, outlierY, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Etiket
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#333';
+            ctx.fillText(dataset.label, x, height - padding + 20);
+        });
+    }
+
+    // Boxplot'u çiz
+    drawBoxplot();
+
+    // Chart instance'ı oluştur (diğer fonksiyonlarla uyumlu olması için)
+    chartInstance = {
+        destroy: function() {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        },
+        update: function() {
+            this.destroy();
+            updateChart();
+        }
+    };
+
+    // Boxplot stilini uygula
+    canvas.parentNode.classList.add('boxplot-chart');
+    return;
+}
+
+// Quantile hesaplama fonksiyonu
+function quantile(sortedArray, q) {
+    const pos = (sortedArray.length - 1) * q;
+    const base = Math.floor(pos);
+    const rest = pos - base;
+    
+    if (sortedArray[base + 1] !== undefined) {
+        return sortedArray[base] + rest * (sortedArray[base + 1] - sortedArray[base]);
+    } else {
+        return sortedArray[base];
+    }
+}
+
+// Violin Plot grafiği
+if (currentChartType === 'violin') {
+    const values = [];
+    const labels = [];
+    
+    // Verileri topla
+    dataTable.querySelectorAll('tbody tr').forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 2) {
+            labels.push(cells[0].textContent.trim());
+            for (let i = 1; i < cells.length - 1; i++) {
+                const value = parseFloat(cells[i].textContent);
+                if (!isNaN(value)) {
+                    values.push({
+                        label: cells[0].textContent.trim(),
+                        value: value
+                    });
+                }
+            }
+        }
+    });
+
+    if (values.length === 0) {
+        showToast('Violin Plot oluşturmak için sayısal veri bulunamadı!', 'error');
+        return;
+    }
+
+    // Verileri gruplara ayır
+    const groupedData = {};
+    values.forEach(item => {
+        if (!groupedData[item.label]) {
+            groupedData[item.label] = [];
+        }
+        groupedData[item.label].push(item.value);
+    });
+
+    // Kernel Density Estimation fonksiyonu
+    function kernelDensityEstimation(data, bandwidth = 1) {
+        const min = Math.min(...data) - bandwidth * 3;
+        const max = Math.max(...data) + bandwidth * 3;
+        const step = (max - min) / 100;
+        const points = [];
+        
+        // Gaussian kernel fonksiyonu
+        const kernel = u => Math.exp(-0.5 * u * u) / Math.sqrt(2 * Math.PI);
+        
+        for (let x = min; x <= max; x += step) {
+            let density = 0;
+            for (let i = 0; i < data.length; i++) {
+                density += kernel((x - data[i]) / bandwidth);
+            }
+            density /= (data.length * bandwidth);
+            points.push({ x, density });
+        }
+        
+        return points;
+    }
+
+    // Violin şekillerini oluştur
+    const violinDatasets = Object.keys(groupedData).map((label, index) => {
+        const data = groupedData[label];
+        const kde = kernelDensityEstimation(data);
+        const maxDensity = Math.max(...kde.map(d => d.density));
+        
+        // Violin şekli için pozitif ve negatif noktalar
+        const violinPoints = kde.map(point => ({
+            x: label,
+            y: point.x,
+            v: point.density / maxDensity // normalize edilmiş yoğunluk
+        }));
+
+        return {
+            label: label,
+            data: violinPoints,
+            backgroundColor: hexToRgba(colorPalette[index % colorPalette.length], 0.5),
+            borderColor: colorPalette[index % colorPalette.length],
+            borderWidth: 1
+        };
+    });
+
+    chartInstance = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: violinDatasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'category',
+                    title: {
+                        display: true,
+                        text: 'Gruplar'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Değerler'
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: function(context) {
+                        // Violin şeklini oluşturmak için nokta boyutunu ayarla
+                        const data = context.dataset.data[context.dataIndex];
+                        return Math.max(1, Math.abs(data.v * 20)); // Yoğunluğa göre boyut
+                    },
+                    pointStyle: 'rect',
+                    rotation: 45
+                }
+            }
+        }
+    });
+
+    // Violin stilini uygula
+    ctx.canvas.parentNode.classList.add('violin-chart');
+    setupChartClickHandler();
+    return;
+}
+
+        // Treemap grafiği
+if (currentChartType === 'treemap') {
+    if (chartInstance) chartInstance.destroy();
+    
+    const ctx = document.getElementById('chartCanvas');
+    ctx.parentNode.classList.add('treemap-chart');
+    
+    // Verileri topla
+    const data = [];
+    const labels = [];
+    const headerRow = dataTable.querySelector('thead tr');
+    const headers = [];
+    
+    // Başlıkları al
+    headerRow.querySelectorAll('th').forEach((th, index) => {
+        if (index !== 0 && index !== headerRow.children.length - 1) {
+            headers.push(th.childNodes[0].textContent.trim());
+        }
+    });
+
+    // Verileri ve etiketleri topla
+    dataTable.querySelectorAll('tbody tr').forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 2) {
+            labels.push(cells[0].textContent.trim());
+            for (let i = 1; i < cells.length - 1; i++) {
+                const value = parseFloat(cells[i].textContent) || 0;
+                if (!data[i - 1]) {
+                    data[i - 1] = {
+                        label: headers[i - 1],
+                        values: []
+                    };
+                }
+                data[i - 1].values.push(value);
+            }
+        }
+    });
+
+    // Treemap oluşturmak için canvas'ı temizle
+    ctx.width = ctx.parentNode.clientWidth;
+    ctx.height = ctx.parentNode.clientHeight;
+    const context = ctx.getContext('2d');
+    context.clearRect(0, 0, ctx.width, ctx.height);
+
+    // Treemap verilerini hazırla (ilk sütunun değerlerini kullanıyoruz)
+    const treemapData = [];
+    dataTable.querySelectorAll('tbody tr').forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 2) {
+            const value = parseFloat(cells[1].textContent) || 0;
+            if (value > 0) {
+                treemapData.push({
+                    label: cells[0].textContent.trim(),
+                    value: value,
+                    color: colorPalette[rowIndex % colorPalette.length]
+                });
+            }
+        }
+    });
+
+    // Toplam değeri hesapla
+    const totalValue = treemapData.reduce((sum, item) => sum + item.value, 0);
+    if (totalValue === 0) {
+        showToast('Treemap oluşturmak için pozitif değerler gereklidir!', 'error');
+        return;
+    }
+
+    // Treemap oluşturma fonksiyonu
+    function drawTreemap(items, width, height, x = 0, y = 0) {
+        if (items.length === 0) return;
+        
+        // Tek öğe kaldıysa
+        if (items.length === 1) {
+            const item = items[0];
+            const percentage = (item.value / totalValue) * 100;
+            
+            // Hücreyi çiz
+            context.fillStyle = item.color;
+            context.fillRect(x, y, width, height);
+            context.strokeStyle = '#fff';
+            context.strokeRect(x, y, width, height);
+            
+            // Metni çiz
+            context.fillStyle = '#fff';
+            context.font = `bold ${Math.max(10, Math.min(16, height / 5))}px Arial`;
+            context.textAlign = 'center';
+            
+            // Metni sığdırmaya çalış
+            const lines = wrapText(context, `${item.label}\n${item.value} (${percentage.toFixed(1)}%)`, width - 10);
+            const lineHeight = 20;
+            const textHeight = lines.length * lineHeight;
+            const startY = y + (height - textHeight) / 2 + lineHeight;
+            
+            lines.forEach((line, i) => {
+                context.fillText(line, x + width / 2, startY + (i * lineHeight));
+            });
+            
+            return;
+        }
+        
+        // Öğeleri sırala
+        items.sort((a, b) => b.value - a.value);
+        
+        // Yatay veya dikey bölme kararı
+        const halfTotal = items.reduce((sum, item) => sum + item.value, 0) / 2;
+        let currentSum = 0;
+        let splitIndex = 0;
+        
+        // Bölme noktasını bul
+        while (currentSum < halfTotal && splitIndex < items.length - 1) {
+            currentSum += items[splitIndex].value;
+            splitIndex++;
+        }
+        
+        // Hangi yönde böleceğimize karar ver
+        const isWide = width > height;
+        const splitAt = isWide ? 
+            (currentSum / (currentSum + items.slice(splitIndex).reduce((sum, item) => sum + item.value, 0))) * width :
+            (currentSum / (currentSum + items.slice(splitIndex).reduce((sum, item) => sum + item.value, 0))) * height;
+        
+        // Öğeleri böl ve rekürsif olarak çiz
+        const firstHalf = items.slice(0, splitIndex);
+        const secondHalf = items.slice(splitIndex);
+        
+        if (isWide) {
+            drawTreemap(firstHalf, splitAt, height, x, y);
+            drawTreemap(secondHalf, width - splitAt, height, x + splitAt, y);
+        } else {
+            drawTreemap(firstHalf, width, splitAt, x, y);
+            drawTreemap(secondHalf, width, height - splitAt, x, y + splitAt);
+        }
+    }
+    
+    // Metni sığdırmak için yardımcı fonksiyon
+    function wrapText(context, text, maxWidth) {
+        const words = text.split('\n');
+        let lines = [];
+        
+        words.forEach(phrase => {
+            let line = '';
+            const subWords = phrase.split(' ');
+            
+            subWords.forEach(word => {
+                const testLine = line + word + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && line !== '') {
+                    lines.push(line);
+                    line = word + ' ';
+                } else {
+                    line = testLine;
+                }
+            });
+            
+            lines.push(line.trim());
+        });
+        
+        return lines;
+    }
+    
+    // Treemap'i çiz
+    drawTreemap(treemapData, ctx.width, ctx.height);
+    
+    // Chart instance'ı boş bir obje olarak ayarla (diğer fonksiyonların beklentisini karşılamak için)
+    chartInstance = {
+        destroy: function() {
+            // Treemap'i temizle
+            context.clearRect(0, 0, ctx.width, ctx.height);
+        },
+        update: function() {
+            // Treemap'i yeniden çiz
+            this.destroy();
+            updateChart();
+        }
+    };
+    
+    return;
+}
 
         // Progress Donut grafiği
 if (currentChartType === 'progressDonut') {

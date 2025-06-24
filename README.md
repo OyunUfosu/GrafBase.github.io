@@ -31,10 +31,16 @@
 * Histogram Grafiği
 * İbreli (Gauge) Grafiği
 * İlerleme Halka (Progress Donut) Grafiği
+* 📌 **Yeni:** Ağaç Haritası (Treemap) Grafiği
+* 📌 **Yeni:** Keman (Violin Plot) Grafiği
+* 📌 **Yeni:** Kutu Planı (Boxplot) Grafiği
+* 📌 **Yeni:** Akış (stream) Grafiği
+
 
 ### ✍️ Kolay ve Esnek Veri Girişi
 
 * Etiketler ve sayısal değerlerle hızlı giriş imkanı
+* 📥 **Yeni:** XLS formatında veri içeri aktarma desteği  
 
 ### 📄 PDF Dışa Aktarma
 
@@ -56,6 +62,11 @@
 
 * Grafik elemanları için manuel renk seçimi
 * Kendi renk paletini oluşturma ve uygulama
+* 📌 **Yeni:** Grafiklerin renklerini gerçek zamanlı değiştirme desteği  
+
+### 🧠 Grafik Öneri Sistemi
+
+* 📌 **Yeni:** Girdiğiniz veriye göre en uygun grafik türünü otomatik olarak önerir 
 
 ### 🗑️ Veri Sıfırlama
 
@@ -94,6 +105,8 @@
 * 📈 `chartjs-chart-financial` ile finansal grafikler (candlestick)
 * 🏷️ `chartjs-plugin-datalabels` ile veri etiketleri
 * ✍️ `chartjs-plugin-annotation` ile çizim/etiket/işaretleme
+* 📥 **xlsx-parser** veya benzeri bir kütüphane ile `.xls` dosya içe aktarma
+* 🧠 Özel algoritmalar ile grafik öneri sistemi
 
 ---
 

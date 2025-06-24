@@ -523,3 +523,145 @@ th:hover .delete-col {
     font-weight: bold;
     text-align: center;
 }
+/* Treemap grafiği için ek stiller */
+.chart-btn[data-type="treemap"] i {
+    color: #333;
+}
+
+.chart-container .treemap-chart {
+    background-color: white;
+}
+
+/* Treemap hücreleri için stil */
+.treemap-cell {
+    border: 1px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    overflow: hidden;
+    box-sizing: border-box;
+    position: absolute;
+}
+/* Violin Plot için ek stiller */
+.chart-btn[data-type="violin"] i {
+    color: #333;
+}
+
+.chart-container .violin-chart {
+    background-color: white;
+}
+/* Boxplot grafiği için ek stiller */
+.chart-btn[data-type="boxplot"] i {
+    color: #333;
+}
+
+.chart-container .boxplot-chart {
+    background-color: white;
+}
+/* Stream Graph için ek stiller */
+.chart-btn[data-type="stream"] i {
+    color: #333;
+}
+
+.chart-container .stream-chart {
+    background-color: white;
+}
+
+.fa-wave-square {
+    margin-right: 5px;
+}
+/* Grafik önerisi modalı stilleri */
+#recommendationModal .modal-content {
+    width: 500px;
+    max-width: 90%;
+}
+
+.recommendation-item {
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.recommendation-item:hover {
+    background-color: #f5f5f5;
+}
+
+.recommendation-item.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.recommendation-item h4 {
+    margin: 0 0 5px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.recommendation-item p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.recommendation-item .score {
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+/* Öneri butonu stili */
+#recommendChart {
+    background-color: #9b59b6;
+}
+
+#recommendChart:hover {
+    background-color: #8e44ad;
+}
+/* Modal pozisyonunu düzelt */
+#recommendationModal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Modal içeriği için genişlik ayarı */
+#recommendationModal .modal-content {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Modal kapatma butonu */
+.close-recommendation {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.close-recommendation:hover {
+    color: #333;
+}
+
+/* Öneri listesi için scroll */
+#recommendationResults {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 15px 0;
+}

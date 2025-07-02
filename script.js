@@ -45,6 +45,356 @@ document.addEventListener('DOMContentLoaded', async function () {
     // ChartDataLabels eklentisini yükle
     await loadChartDataLabels();
 
+// script.js dosyasında, DOMContentLoaded event listener'ı içine ekleyin
+
+// Paylaş butonu event listener'ı
+document.getElementById('shareData').addEventListener('click', generateShareableLink);
+
+// Veriyi sıkıştırma fonksiyonu (base64 URL-safe)
+function compressData(data) {
+    const jsonString = JSON.stringify(data);
+    // LZ-String kütüphanesi kullanarak sıkıştırma
+    if (typeof LZString !== 'undefined') {
+        return LZString.compressToEncodedURIComponent(jsonString);
+    }
+    // Fallback: base64 encode
+    return btoa(encodeURIComponent(jsonString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));
+}
+
+// Veriyi açma fonksiyonu
+function decompressData(compressed) {
+    try {
+        // LZ-String kütüphanesi kullanarak açma
+        if (typeof LZString !== 'undefined') {
+            return JSON.parse(LZString.decompressFromEncodedURIComponent(compressed));
+        }
+        // Fallback: base64 decode
+        return JSON.parse(decodeURIComponent(atob(compressed.replace(/-/g, '+').replace(/_/g, '/'))));
+    } catch (e) {
+        console.error('Veri açma hatası:', e);
+        return null;
+    }
+}
+
+// Paylaşılabilir bağlantı oluşturma fonksiyonu
+async function generateShareableLink() {
+    try {
+        const tableData = getTableData();
+        const chartConfig = chartInstance ? {
+            type: chartInstance.config.type,
+            data: chartInstance.data,
+            options: chartInstance.options
+        } : null;
+        
+        const dataToShare = {
+            version: "1.1",
+            tableData: tableData,
+            chartConfig: chartConfig,
+            colorPalette: colorPalette,
+            timestamp: new Date().toISOString()
+        };
+
+        // Datalabels plugin'i kaldır (JSON.stringify sorun çıkarıyor)
+        if (dataToShare.chartConfig && dataToShare.chartConfig.options && 
+            dataToShare.chartConfig.options.plugins && 
+            dataToShare.chartConfig.options.plugins.datalabels) {
+            delete dataToShare.chartConfig.options.plugins.datalabels;
+        }
+
+        // LZ-String kütüphanesini dinamik olarak yükle
+        await loadLZStringLibrary();
+        
+        const compressedData = compressData(dataToShare);
+        const currentUrl = window.location.href.split('?')[0];
+        const shareableUrl = `${currentUrl}?data=${compressedData}`;
+
+        // Kopyalama işlemi için modal göster
+        showShareModal(shareableUrl);
+    } catch (error) {
+        console.error('Paylaşma hatası:', error);
+        showToast('Paylaşılabilir bağlantı oluşturulurken hata oluştu!', 'error');
+    }
+}
+
+// LZ-String kütüphanesini yükleme fonksiyonu
+function loadLZStringLibrary() {
+    return new Promise((resolve, reject) => {
+        if (typeof LZString !== 'undefined') return resolve();
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+// Paylaşım modalını gösteren fonksiyon
+function showShareModal(shareableUrl) {
+    const modal = document.createElement('div');
+    modal.id = 'shareModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 500px; max-width: 90%;">
+            <span class="close-share-modal">&times;</span>
+            <h3>Paylaşılabilir Bağlantı</h3>
+            <p>Bu bağlantıyı kopyalayarak verilerinizi başkalarıyla paylaşabilirsiniz:</p>
+            <div class="share-url-container">
+                <input type="text" id="shareUrlInput" value="${shareableUrl}" readonly>
+                <button id="copyShareUrl" class="btn-primary"><i class="fas fa-copy"></i> Kopyala</button>
+            </div>
+            <div class="share-actions">
+                <a href="mailto:?body=${encodeURIComponent(shareableUrl)}" class="btn-primary" id="emailShare">
+                    <i class="fas fa-envelope"></i> E-posta ile gönder
+                </a>
+                <button class="btn-primary" id="whatsappShare">
+                    <i class="fab fa-whatsapp"></i> WhatsApp ile paylaş
+                </button>
+            </div>
+            <p class="share-note"><small>Not: Büyük veri setleri için URL çok uzun olabilir. Bu durumda "Veri Kaydet" butonunu kullanarak dosya paylaşmayı deneyin.</small></p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+    
+    // Kapatma butonu
+    modal.querySelector('.close-share-modal').onclick = function() {
+        modal.remove();
+    };
+    
+    // Dışarı tıklayarak kapatma
+    modal.onclick = function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
+    
+    // Kopyalama butonu
+    document.getElementById('copyShareUrl').addEventListener('click', function() {
+        const input = document.getElementById('shareUrlInput');
+        input.select();
+        document.execCommand('copy');
+        showToast('Bağlantı panoya kopyalandı!', 'success');
+    });
+    
+    // WhatsApp paylaşım butonu
+    document.getElementById('whatsappShare').addEventListener('click', function() {
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareableUrl)}`, '_blank');
+    });
+}
+
+// Sayfa yüklendiğinde URL'den veri okuma
+function checkForSharedData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedData = urlParams.get('data');
+    
+    if (sharedData) {
+        try {
+            const decompressed = decompressData(sharedData);
+            if (decompressed) {
+                // Kullanıcıya onay soralım
+                if (confirm('Paylaşılan verileri yüklemek istiyor musunuz? Mevcut verileriniz silinecek.')) {
+                    loadSharedData(decompressed);
+                }
+            }
+        } catch (error) {
+            console.error('Paylaşılan veri okuma hatası:', error);
+            showToast('Paylaşılan veri okunamadı!', 'error');
+        }
+    }
+}
+
+// Paylaşılan verileri yükleme fonksiyonu
+function loadSharedData(data) {
+    // Tablo verilerini yükle
+    if (data.tableData) {
+        loadTableData(data.tableData);
+    }
+    
+    // Renk paletini yükle
+    if (data.colorPalette) {
+        colorPalette = data.colorPalette;
+    }
+    
+    // Grafik verilerini yükle
+    if (data.chartConfig) {
+        currentChartType = data.chartConfig.type;
+        
+        // Aktif butonu güncelle
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.type === currentChartType) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Grafiği oluştur
+        setTimeout(() => {
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            
+            chartInstance = new Chart(ctx, {
+                type: data.chartConfig.type,
+                data: data.chartConfig.data,
+                options: data.chartConfig.options
+            });
+            
+            setupChartClickHandler();
+        }, 100);
+    }
+    
+    showToast('Paylaşılan veriler başarıyla yüklendi!', 'success');
+    
+    // URL'den veri parametresini temizle (yeniden yükleme yapılmaması için)
+    if (window.history.replaceState) {
+        const cleanUrl = window.location.href.split('?')[0];
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+}
+
+// DOMContentLoaded event listener'ının en sonuna ekleyin
+document.addEventListener('DOMContentLoaded', function() {
+
+// Ses tanıma için değişkenler
+let recognition;
+let isListening = false;
+
+// Sesli giriş butonu
+const voiceInputBtn = document.getElementById('voiceInput');
+
+// Ses tanımayı başlatma fonksiyonu
+function setupVoiceRecognition() {
+    // Tarayıcı desteğini kontrol et
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        voiceInputBtn.disabled = true;
+        voiceInputBtn.title = "Tarayıcınız ses tanımayı desteklemiyor";
+        showToast('Tarayıcınız ses tanımayı desteklemiyor', 'error');
+        return;
+    }
+    
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'tr-TR'; // Türkçe için
+    
+    // Ses tanıma başladığında
+    recognition.onstart = function() {
+        isListening = true;
+        voiceInputBtn.classList.add('listening');
+        showToast('Dinleniyor...', 'info');
+    };
+    
+    // Ses tanıma bittiğinde
+    recognition.onend = function() {
+        isListening = false;
+        voiceInputBtn.classList.remove('listening');
+    };
+    
+    // Sonuç alındığında
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript.trim();
+        processVoiceInput(transcript);
+    };
+    
+    // Hata durumunda
+    recognition.onerror = function(event) {
+        console.error('Ses tanıma hatası:', event.error);
+        showToast(`Ses tanıma hatası: ${event.error}`, 'error');
+        voiceInputBtn.classList.remove('listening');
+    };
+    
+    // Buton event listener'ı
+    voiceInputBtn.addEventListener('click', toggleVoiceRecognition);
+}
+
+// Ses tanımayı başlat/durdur
+function toggleVoiceRecognition() {
+    if (!recognition) {
+        showToast('Ses tanıma başlatılamadı', 'error');
+        return;
+    }
+    
+    if (isListening) {
+        recognition.stop();
+    } else {
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('Ses tanıma başlatma hatası:', error);
+            showToast('Mikrofon erişimi reddedildi', 'error');
+        }
+    }
+}
+
+// Sesli girişi işleme fonksiyonu
+function processVoiceInput(transcript) {
+    showToast(`Algılandı: "${transcript}"`, 'success');
+    
+    // Aktif hücreyi bul
+    const activeCell = document.querySelector('td[contenteditable="true"]:focus');
+    if (activeCell) {
+        // Sayısal değer kontrolü (eğer hücre sayısal bir değer bekliyorsa)
+        const isNumericCell = activeCell.closest('td') && 
+                             activeCell.closest('tr').querySelectorAll('td').length > 1 && 
+                             activeCell.closest('td') !== activeCell.closest('tr').querySelector('td:first-child');
+        
+        if (isNumericCell) {
+            // Türkçe sayı formatı (virgül için)
+            const number = parseFloat(transcript.replace(',', '.'));
+            if (!isNaN(number)) {
+                activeCell.textContent = number;
+            } else {
+                activeCell.textContent = transcript;
+            }
+        } else {
+            activeCell.textContent = transcript;
+        }
+    } else {
+        // Aktif hücre yoksa, yeni satır ekle ve ilk hücreye yaz
+        const tbody = dataTable.querySelector('tbody');
+        const newRow = document.createElement('tr');
+        const colCount = dataTable.querySelector('thead tr').children.length;
+        
+        for (let i = 0; i < colCount; i++) {
+            const cell = document.createElement('td');
+            if (i === 0) {
+                cell.contentEditable = 'true';
+                cell.textContent = transcript;
+            } else if (i === colCount - 1) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-danger deleteRow';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Sil';
+                deleteBtn.addEventListener('click', () => newRow.remove());
+                cell.appendChild(deleteBtn);
+            } else {
+                cell.contentEditable = 'true';
+                cell.textContent = '0';
+            }
+            newRow.appendChild(cell);
+        }
+        
+        tbody.appendChild(newRow);
+    }
+    
+    // Değişiklikten sonra tabloyu güncelle
+    if (chartInstance) {
+        updateChart();
+    }
+}
+
+// Uygulama başladığında ses tanımayı ayarla
+document.addEventListener('DOMContentLoaded', function() {
+    // ... diğer kodlar ...
+    setupVoiceRecognition();
+});
+
+    // Sayfa yüklendiğinde URL'de paylaşılan veri olup olmadığını kontrol et
+    checkForSharedData();
+});
+
     document.getElementById('recommendChart').addEventListener('click', analyzeDataForRecommendation);
     // Grafik önerisi modalını oluştur
 function createRecommendationModal() {
@@ -2649,63 +2999,182 @@ if (currentChartType === 'bubble') {
         });
         setupChartClickHandler();
     }
-// PDF indirme butonu event listener'ı
-document.getElementById('downloadPdf').addEventListener('click', async function() {
+// PDF indirme butonu event listener'ını değiştir
+document.getElementById('downloadChart').addEventListener('click', async function() {
     try {
-        // jsPDF'nin yüklü olduğundan emin ol
-        if (!window.jspdf || !window.jspdf.jsPDF) {
-            await loadJsPdfLibrary();
+        // Format seçim modalını göster
+        const format = await showDownloadFormatModal();
+        if (!format) return; // Kullanıcı iptal etti
+        
+        switch(format) {
+            case 'pdf':
+                await downloadAsPDF();
+                break;
+            case 'png':
+                await downloadAsPNG();
+                break;
+            case 'svg':
+                await downloadAsSVG();
+                break;
         }
-        
-        // html2canvas'ın yüklü olduğundan emin ol
-        if (typeof html2canvas === 'undefined') {
-            await loadHtml2CanvasLibrary();
-        }
-
-        const { jsPDF } = window.jspdf;
-        const chartContainer = document.querySelector('.chart-container');
-        
-        showToast('PDF hazırlanıyor...', 'info');
-        
-        const canvas = await html2canvas(chartContainer, {
-            scale: 2,
-            logging: false,
-            useCORS: true,
-            backgroundColor: '#FFFFFF'
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape mode
-        
-        const imgWidth = 280;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const position = 10; // margin
-        
-        pdf.addImage(imgData, 'PNG', position, position, imgWidth, imgHeight);
-        pdf.save('grafik.pdf');
-        
-        showToast('PDF indirildi!', 'success');
     } catch (error) {
-        console.error('PDF hatası:', error);
-        showToast(`PDF oluşturulamadı: ${error.message}`, 'error');
+        console.error('İndirme hatası:', error);
+        showToast(`İndirme başarısız: ${error.message}`, 'error');
     }
 });
 
-// jsPDF'yi dinamik yükleme fonksiyonu
-function loadJsPdfLibrary() {
-    return new Promise((resolve, reject) => {
-        if (window.jspdf) return resolve();
+// Format seçim modalını gösteren fonksiyon
+function showDownloadFormatModal() {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        modal.innerHTML = `
+            <div class="modal-content" style="width: 300px;">
+                <span class="close-modal">&times;</span>
+                <h3>İndirme Formatı Seçin</h3>
+                <div class="format-options">
+                    <button class="format-btn" data-format="png"><i class="fas fa-file-image"></i> PNG</button>
+                    <button class="format-btn" data-format="svg"><i class="fas fa-file-code"></i> SVG</button>
+                    <button class="format-btn" data-format="pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </div>
+        `;
         
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        script.onload = () => {
-            // jsPDF'yi global erişime aç
-            window.jspdf = window.jspdf;
-            resolve();
+        document.body.appendChild(modal);
+        
+        // Kapatma butonu
+        modal.querySelector('.close-modal').onclick = function() {
+            modal.remove();
+            resolve(null);
         };
-        script.onerror = reject;
-        document.head.appendChild(script);
+        
+        // Dışarı tıklayarak kapatma
+        modal.onclick = function(e) {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        };
+        
+        // Format butonları
+        modal.querySelectorAll('.format-btn').forEach(btn => {
+            btn.onclick = function() {
+                const format = this.dataset.format;
+                modal.remove();
+                resolve(format);
+            };
+        });
     });
+}
+
+// PNG olarak indirme fonksiyonu
+async function downloadAsPNG() {
+    if (typeof html2canvas === 'undefined') {
+        await loadHtml2CanvasLibrary();
+    }
+
+    const chartContainer = document.querySelector('.chart-container');
+    showToast('PNG hazırlanıyor...', 'info');
+    
+    const canvas = await html2canvas(chartContainer, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#FFFFFF'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `grafik-${new Date().toISOString().slice(0, 10)}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('PNG indirildi!', 'success');
+}
+
+// SVG olarak indirme fonksiyonu
+async function downloadAsSVG() {
+    if (!chartInstance) {
+        throw new Error('Önce bir grafik oluşturmalısınız');
+    }
+
+    showToast('SVG hazırlanıyor...', 'info');
+    
+    // Canvas'ı SVG'ye dönüştür
+    const canvas = document.getElementById('chartCanvas');
+    const svgData = canvasToSVG(canvas);
+    
+    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+    const svgUrl = URL.createObjectURL(svgBlob);
+    
+    const link = document.createElement('a');
+    link.href = svgUrl;
+    link.download = `grafik-${new Date().toISOString().slice(0, 10)}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Belleği temizle
+    setTimeout(() => URL.revokeObjectURL(svgUrl), 100);
+    
+    showToast('SVG indirildi!', 'success');
+}
+
+// Canvas'ı SVG'ye dönüştürme fonksiyonu
+function canvasToSVG(canvas) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', canvas.width);
+    svg.setAttribute('height', canvas.height);
+    
+    const image = document.createElementNS(ns, 'image');
+    image.setAttribute('width', canvas.width);
+    image.setAttribute('height', canvas.height);
+    image.setAttribute('href', canvas.toDataURL('image/png'));
+    
+    svg.appendChild(image);
+    
+    // SVG string olarak döndür
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(svg);
+}
+
+// PDF indirme fonksiyonu (mevcut fonksiyonu güncelle)
+async function downloadAsPDF() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        await loadJsPdfLibrary();
+    }
+    
+    if (typeof html2canvas === 'undefined') {
+        await loadHtml2CanvasLibrary();
+    }
+
+    const { jsPDF } = window.jspdf;
+    const chartContainer = document.querySelector('.chart-container');
+    
+    showToast('PDF hazırlanıyor...', 'info');
+    
+    const canvas = await html2canvas(chartContainer, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#FFFFFF'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    
+    const imgWidth = 280;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const position = 10;
+    
+    pdf.addImage(imgData, 'PNG', position, position, imgWidth, imgHeight);
+    pdf.save(`grafik-${new Date().toISOString().slice(0, 10)}.pdf`);
+    
+    showToast('PDF indirildi!', 'success');
 }
 
 // html2canvas'ı dinamik yükleme fonksiyonu

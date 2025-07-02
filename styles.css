@@ -665,3 +665,130 @@ th:hover .delete-col {
     overflow-y: auto;
     margin: 15px 0;
 }
+/* Yeni eklenen stiller */
+.format-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.format-btn {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.format-btn:hover {
+    background-color: #d6eaf8;
+}
+
+.format-btn i {
+    font-size: 1.2em;
+}
+
+.close-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: black;
+}
+#shareData {
+    background-color: #1abc9c;
+}
+
+#shareData:hover {
+    background-color: #16a085;
+}
+/* Paylaşım modalı stilleri */
+#shareModal .modal-content {
+    width: 500px;
+    max-width: 90%;
+}
+
+.share-url-container {
+    display: flex;
+    margin: 15px 0;
+}
+
+#shareUrlInput {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+}
+
+#copyShareUrl {
+    border-radius: 0 4px 4px 0;
+    white-space: nowrap;
+}
+
+.share-actions {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.share-actions .btn-primary {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.share-note {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 20px;
+}
+
+.close-share-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-share-modal:hover {
+    color: black;
+}
+/* Sesli giriş için ek stiller */
+#voiceInput.listening {
+    background-color: var(--danger-color);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+    }
+}
+
+.voice-status {
+    margin-left: 10px;
+    font-size: 0.9em;
+    color: var(--dark-color);
+}

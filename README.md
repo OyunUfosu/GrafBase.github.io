@@ -41,10 +41,20 @@
 
 * Etiketler ve sayısal değerlerle hızlı giriş imkanı
 * 📥 **Yeni:** XLS formatında veri içeri aktarma desteği  
+* 🎙️ **Yeni:** Sesli veri girişi desteği *(⚠️ şu anda tüm tarayıcılarda tam olarak çalışmamaktadır)*
+
+### 🔗 Grafik Paylaşma Özelliği
+
+* 📤 **Yeni:** Oluşturduğunuz grafikleri tek tıkla paylaşılabilir bağlantı (link) olarak oluşturabilirsiniz
+* 💬 **Yeni:** Bağlantıyı kopyalayıp başkalarıyla kolayca paylaşabilirsiniz
 
 ### 📄 PDF Dışa Aktarma
 
 * Oluşturulan grafikleri yüksek kalitede PDF olarak indirme
+
+* **Yeni:** Oluşturulan grafikleri yüksek kaliteli PNG olarak indirme
+
+* **Yeni:** Oluşturulan grafikleri yüksek kaliteli PVG olarak indirme
 
 ### 💡 Hafif ve Responsive Arayüz
 

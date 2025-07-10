@@ -792,3 +792,96 @@ th:hover .delete-col {
     font-size: 0.9em;
     color: var(--dark-color);
 }
+/* Sürükle-bırak stilleri */
+[draggable="true"] {
+    cursor: grab;
+}
+
+[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* Sütun sürükleme sırasında hedef alanı vurgula */
+th.drop-target {
+    border: 2px dashed var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+/* Renk paleti sürükleme stilleri */
+.palette-item.drop-target {
+    border: 2px dashed var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+/* Grafik elemanları için sürükle-bırak stilleri */
+.chart-element {
+    position: absolute;
+    padding: 5px 10px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: move;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-element:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+/* Gantt Grafiği için ek stiller */
+.chart-btn[data-type="gantt"] i {
+    color: #333;
+}
+
+.chart-container .gantt-chart {
+    background-color: white;
+}
+
+.gantt-task {
+    position: absolute;
+    height: 20px;
+    border-radius: 3px;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 5px;
+}
+
+.gantt-axis {
+    position: relative;
+    height: 40px;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+.gantt-axis-label {
+    position: absolute;
+    bottom: 5px;
+    transform: translateX(-50%);
+    font-size: 12px;
+}
+
+.gantt-task-label {
+    position: absolute;
+    left: 0;
+    width: 150px;
+    padding-right: 10px;
+    text-align: right;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gantt-row {
+    position: relative;
+    height: 30px;
+    margin-bottom: 5px;
+}

@@ -256,6 +256,163 @@ function loadSharedData(data) {
 // DOMContentLoaded event listener'ının en sonuna ekleyin
 document.addEventListener('DOMContentLoaded', function() {
 
+    showDragDropHints();
+    
+    // Sürükle-bırak işlevselliği için değişkenler
+let draggedItem = null;
+let draggedColor = null;
+let draggedColumn = null;
+
+// Tablo sütunları için sürükle-bırak işlevselliği
+function setupColumnDragAndDrop() {
+    const headerRow = document.querySelector('#dataTable thead tr');
+    
+    // Sütun başlıkları için sürükle-bırak
+    headerRow.querySelectorAll('th').forEach(th => {
+        if (!th.querySelector('.delete-col')) return; // İşlem sütununu hariç tut
+        
+        th.setAttribute('draggable', 'true');
+        
+        th.addEventListener('dragstart', function(e) {
+            draggedColumn = th;
+            e.dataTransfer.setData('text/plain', th.cellIndex);
+            this.style.opacity = '0.5';
+        });
+        
+        th.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+        });
+    });
+    
+    headerRow.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        const targetTh = e.target.closest('th');
+        if (targetTh && targetTh !== draggedColumn) {
+            const thList = Array.from(headerRow.querySelectorAll('th'));
+            const draggedIndex = thList.indexOf(draggedColumn);
+            const targetIndex = thList.indexOf(targetTh);
+            
+            if (draggedIndex < targetIndex) {
+                headerRow.insertBefore(draggedColumn, targetTh.nextSibling);
+            } else {
+                headerRow.insertBefore(draggedColumn, targetTh);
+            }
+        }
+    });
+    
+    // Sütun değişikliğini tabloya yansıt
+    headerRow.addEventListener('drop', function() {
+        const tbody = document.querySelector('#dataTable tbody');
+        const thList = Array.from(headerRow.querySelectorAll('th'));
+        const newOrder = thList.map(th => th.cellIndex);
+        
+        // Tüm satırları güncelle
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            const newCellsOrder = newOrder.slice(0, -1); // Son sütunu (işlem sütunu) hariç tut
+            
+            // Yeni sıraya göre hücreleri yeniden düzenle
+            newCellsOrder.forEach((newIndex, i) => {
+                if (i < cells.length - 1) { // Son hücreyi (sil butonu) hariç tut
+                    const cell = cells[newIndex];
+                    if (cell && cell !== row.children[i]) {
+                        row.insertBefore(cell, row.children[i]);
+                    }
+                }
+            });
+        });
+        
+        if (chartInstance) updateChart();
+    });
+}
+
+// Renk paleti için sürükle-bırak işlevselliği
+function setupColorDragAndDrop() {
+    document.querySelectorAll('.palette-color').forEach(colorInput => {
+        colorInput.setAttribute('draggable', 'true');
+        
+        colorInput.addEventListener('dragstart', function(e) {
+            draggedColor = this;
+            e.dataTransfer.setData('text/plain', this.value);
+            this.style.opacity = '0.5';
+        });
+        
+        colorInput.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+        });
+    });
+    
+    document.querySelector('#paletteContainer').addEventListener('dragover', function(e) {
+        e.preventDefault();
+        const targetColor = e.target.closest('.palette-color');
+        if (targetColor && targetColor !== draggedColor) {
+            const container = this;
+            const colors = Array.from(container.querySelectorAll('.palette-color'));
+            const draggedIndex = colors.indexOf(draggedColor);
+            const targetIndex = colors.indexOf(targetColor);
+            
+            if (draggedIndex < targetIndex) {
+                container.insertBefore(draggedColor.parentElement, targetColor.parentElement.nextSibling);
+            } else {
+                container.insertBefore(draggedColor.parentElement, targetColor.parentElement);
+            }
+        }
+    });
+}
+
+// Grafik elemanları için sürükle-bırak işlevselliği
+function setupChartElementDragAndDrop() {
+    const chartCanvas = document.getElementById('chartCanvas');
+    if (!chartCanvas) return;
+    
+    chartCanvas.addEventListener('dragstart', function(e) {
+        if (e.target.classList.contains('chart-element')) {
+            draggedItem = e.target;
+            e.dataTransfer.setData('text/plain', e.target.id);
+            e.target.style.opacity = '0.5';
+        }
+    });
+    
+    chartCanvas.addEventListener('dragend', function(e) {
+        if (e.target.classList.contains('chart-element')) {
+            e.target.style.opacity = '1';
+        }
+    });
+    
+    chartCanvas.addEventListener('dragover', function(e) {
+        e.preventDefault();
+    });
+    
+    chartCanvas.addEventListener('drop', function(e) {
+        e.preventDefault();
+        if (draggedItem) {
+            const rect = chartCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            draggedItem.style.left = `${x}px`;
+            draggedItem.style.top = `${y}px`;
+        }
+        
+    });
+}
+
+ // Sürükle-bırak işlevselliğini başlat
+    setupColumnDragAndDrop();
+    
+    // Renk paleti modalı açıldığında sürükle-bırakı ayarla
+    document.getElementById('colorPaletteBtn').addEventListener('click', function() {
+        setTimeout(setupColorDragAndDrop, 100);
+    });
+    
+    // Grafik oluşturulduğunda sürükle-bırakı ayarla
+    const originalUpdateChart = updateChart;
+    updateChart = function() {
+        originalUpdateChart.apply(this, arguments);
+        setTimeout(setupChartElementDragAndDrop, 100);
+    };
+});
+
 // Ses tanıma için değişkenler
 let recognition;
 let isListening = false;
@@ -1166,6 +1323,159 @@ function getChartTypeName(type) {
     function updateChart() {
         if (chartInstance) chartInstance.destroy();
         const ctx = document.getElementById('chartCanvas').getContext('2d');
+
+        // Gantt Grafiği
+if (currentChartType === 'gantt') {
+    if (chartInstance) chartInstance.destroy();
+    
+    const ctx = document.getElementById('chartCanvas');
+    const container = ctx.parentNode;
+    container.classList.add('gantt-chart');
+    
+    // Canvas'ı temizle ve boyutlandır
+    ctx.width = container.clientWidth;
+    ctx.height = container.clientHeight;
+    const context = ctx.getContext('2d');
+    context.clearRect(0, 0, ctx.width, ctx.height);
+    
+    // Verileri topla
+    const tasks = [];
+    const headerRow = dataTable.querySelector('thead tr');
+    const headers = [];
+    
+    // Başlıkları al (en az 4 sütun olmalı: Görev, Başlangıç, Bitiş, Süre)
+    headerRow.querySelectorAll('th').forEach((th, index) => {
+        if (index !== 0 && index !== headerRow.children.length - 1) {
+            headers.push(th.childNodes[0].textContent.trim());
+        }
+    });
+
+    // Görevleri topla
+    dataTable.querySelectorAll('tbody tr').forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 4) {
+            const taskName = cells[0].textContent.trim();
+            const startDateStr = cells[1].textContent.trim();
+            const endDateStr = cells[2].textContent.trim();
+            const durationStr = cells[3].textContent.trim();
+            
+            try {
+                const startDate = luxon.DateTime.fromISO(startDateStr);
+                const endDate = luxon.DateTime.fromISO(endDateStr);
+                
+                if (startDate.isValid && endDate.isValid) {
+                    tasks.push({
+                        name: taskName,
+                        start: startDate,
+                        end: endDate,
+                        duration: parseFloat(durationStr) || 0,
+                        color: colorPalette[rowIndex % colorPalette.length]
+                    });
+                }
+            } catch (e) {
+                console.error('Tarih parse hatası:', e);
+            }
+        }
+    });
+
+    if (tasks.length === 0) {
+        showToast('Gantt grafiği oluşturmak için geçerli görev verileri bulunamadı!', 'error');
+        return;
+    }
+
+    // Tarih aralığını bul
+    const allDates = tasks.flatMap(task => [task.start, task.end]);
+    const minDate = luxon.DateTime.min(...allDates);
+    const maxDate = luxon.DateTime.max(...allDates);
+    const totalDays = maxDate.diff(minDate, 'days').days;
+
+    // Grafik boyutları
+    const margin = { top: 50, right: 20, bottom: 50, left: 160 };
+    const width = ctx.width - margin.left - margin.right;
+    const height = Math.max(400, tasks.length * 40 + margin.top + margin.bottom);
+    ctx.height = height;
+
+    // Y ekseni için görev isimleri
+    const taskHeight = 20;
+    const taskSpacing = 10;
+
+    // X ekseni (tarih aralığı) için ölçek
+    const xScale = days => (days / totalDays) * width;
+
+    // Arka planı temizle
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, ctx.width, ctx.height);
+
+    // Eksenleri çiz
+    context.fillStyle = '#333';
+    context.font = '12px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    // X ekseni (tarih) için etiketler
+    const months = [];
+    let currentMonth = minDate.startOf('month');
+    while (currentMonth <= maxDate) {
+        months.push(currentMonth);
+        currentMonth = currentMonth.plus({ months: 1 });
+    }
+
+    months.forEach(month => {
+        const daysDiff = month.diff(minDate, 'days').days;
+        const x = margin.left + xScale(daysDiff);
+        context.fillText(month.toFormat('MMM yyyy'), x, margin.top - 20);
+        
+        // Ay çizgisi
+        context.beginPath();
+        context.strokeStyle = '#ddd';
+        context.moveTo(x, margin.top);
+        context.lineTo(x, height - margin.bottom);
+        context.stroke();
+    });
+
+    // Y ekseni (görevler) için etiketler
+    context.textAlign = 'right';
+    tasks.forEach((task, i) => {
+        const y = margin.top + (i * (taskHeight + taskSpacing)) + taskHeight / 2;
+        context.fillText(task.name, margin.left - 10, y);
+    });
+
+    // Görev çubuklarını çiz
+    tasks.forEach((task, i) => {
+        const startDays = task.start.diff(minDate, 'days').days;
+        const endDays = task.end.diff(minDate, 'days').days;
+        const durationDays = endDays - startDays;
+        
+        const x = margin.left + xScale(startDays);
+        const y = margin.top + (i * (taskHeight + taskSpacing));
+        const taskWidth = xScale(durationDays);
+        
+        // Görev çubuğu
+        context.fillStyle = task.color;
+        context.fillRect(x, y, taskWidth, taskHeight);
+        
+        // Görev adı (çubuk içinde)
+        if (taskWidth > 50) {
+            context.fillStyle = 'white';
+            context.font = 'bold 10px Arial';
+            context.textAlign = 'left';
+            context.fillText(task.name, x + 5, y + taskHeight / 2);
+        }
+    });
+
+    // Chart instance'ı oluştur (diğer fonksiyonlarla uyumlu olması için)
+    chartInstance = {
+        destroy: function() {
+            context.clearRect(0, 0, ctx.width, ctx.height);
+        },
+        update: function() {
+            this.destroy();
+            updateChart();
+        }
+    };
+    
+    return;
+}
 
         // Stream Graph
 if (currentChartType === 'stream') {
@@ -3405,7 +3715,6 @@ function loadHtml2CanvasLibrary() {
 
     setupHeaderButtons();
     updateChart();
-});
 
 function linearRegression(points) {
     const n = points.length;
@@ -3450,6 +3759,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 video.currentTime = 0;
             }
         });
+
+function showDragDropHints() {
+    // Sütun başlıklarına ipucu ekle
+    document.querySelectorAll('#dataTable thead th').forEach(th => {
+        if (!th.querySelector('.delete-col')) return;
+        
+        const hint = document.createElement('span');
+        hint.className = 'drag-hint';
+        hint.innerHTML = ' <i class="fas fa-arrows-alt" style="font-size: 0.8em; color: #666;"></i>';
+        th.appendChild(hint);
+    });
+    
+    // Renk paleti butonuna ipucu ekle
+    const paletteBtn = document.getElementById('colorPaletteBtn');
+    if (paletteBtn) {
+        const hint = document.createElement('span');
+        hint.className = 'drag-hint';
+        hint.innerHTML = ' <i class="fas fa-arrows-alt" style="font-size: 0.8em; color: #666;"></i>';
+        paletteBtn.appendChild(hint);
+    }
+}
         
         // Sayfa yüklendiğinde video modalını göster
         videoModal.style.display = 'block';

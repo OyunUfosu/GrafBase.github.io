@@ -31,10 +31,11 @@
 * Histogram Grafiği
 * İbreli (Gauge) Grafiği
 * İlerleme Halka (Progress Donut) Grafiği
-* 📌 **Yeni:** Ağaç Haritası (Treemap) Grafiği
-* 📌 **Yeni:** Keman (Violin Plot) Grafiği
-* 📌 **Yeni:** Kutu Planı (Boxplot) Grafiği
-* 📌 **Yeni:** Akış (stream) Grafiği
+* Ağaç Haritası (Treemap) Grafiği
+* Keman (Violin Plot) Grafiği
+* Kutu Planı (Boxplot) Grafiği
+* Akış (stream) Grafiği
+* 📌 **Yeni:** Gantt Grafiği
 
 
 ### ✍️ Kolay ve Esnek Veri Girişi
